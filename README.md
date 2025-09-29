@@ -71,5 +71,3 @@ Password Generator/
 - The app runs fully in the browser; no backend is required.
 - Tailwind CSS is configured via `tailwind.config.cjs` and `postcss.config.cjs`.
 
-## License
-No license provided. Add one if you plan to distribute.

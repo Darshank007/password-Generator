@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:focus-visible {
+  outline: 2px dashed theme('colors.brand.DEFAULT');
+  outline-offset: 2px;
+}
+
+.transition-base {
+  @apply transition duration-150 ease-out;
+}
+
+.card {
+  @apply rounded-xl bg-slate-900/70 shadow-card ring-1 ring-white/5;
+}
+
+.btn {
+  @apply transition-base inline-flex items-center justify-center rounded-lg px-4 py-2 font-medium focus-visible:ring-2 focus-visible:ring-brand;
+}
+.btn-primary {
+  @apply btn bg-brand text-slate-900 hover:bg-brand-dark;
+}
+.btn-secondary {
+  @apply btn bg-secondary/20 text-secondary hover:bg-secondary/30;
+}
+.btn-ghost {
+  @apply btn bg-slate-800 hover:bg-slate-700;
+}
+
+.input {
+  @apply w-full rounded-lg bg-slate-800 text-slate-100 placeholder-slate-400 border border-slate-700 focus:border-brand p-2;
+}
+
+

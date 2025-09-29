@@ -1,0 +1,22 @@
+# Dependencies
+localpass/node_modules/
+
+# Builds
+localpass/dist/
+localpass/.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env
+localpass/.env
+localpass/.env.*
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

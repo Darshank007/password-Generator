@@ -71,3 +71,16 @@ Password Generator/
 - The app runs fully in the browser; no backend is required.
 - Tailwind CSS is configured via `tailwind.config.cjs` and `postcss.config.cjs`.
 
+## AI Generate (Local-only)
+
+- Adds an optional "AI Generate" button next to "Generate" in `Generator.jsx`.
+- All computation runs locally in your browser using Web Crypto (`crypto.getRandomValues` and `crypto.subtle.digest('SHA-512')`).
+- No network calls, no telemetry. The optional prompt is never stored or sent.
+- Respects the same options as the standard generator (length, lowercase, uppercase, numbers, symbols, avoid ambiguous).
+- For long passwords, the generator re-hashes the last hash to deterministically derive additional bytes.
+
+Usage:
+1. Click "AI Generate".
+2. Optionally describe what you want (e.g., "strong with symbols", "no confusing characters"). You can leave it blank.
+3. The password is generated locally and placed into the field so you can copy or save it like usual.
+

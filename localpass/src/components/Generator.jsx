@@ -54,6 +54,67 @@ export default function Generator({ entries, setEntries }) {
     }
   }
 
+  async function onAIGenerate() {
+    try {
+      if (!globalThis.crypto || !globalThis.crypto.getRandomValues || !globalThis.crypto.subtle || !globalThis.crypto.subtle.digest) {
+        alert('Secure generation unavailable: Web Crypto API not supported in this environment')
+        return
+      }
+
+      const { length: desiredLength, lowercase, uppercase, numbers, symbols, avoidAmbiguous } = options
+
+      const AMBIGUOUS = new Set(['l','I','1','O','0','o','S','5','B','8'])
+      const LOWERCASE = 'abcdefghijklmnopqrstuvwxyz'
+      const UPPERCASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      const NUMBERS = '0123456789'
+      const SYMBOLS = "!@#$%^&*()-_=+[]{};:'\",.<>/?`~|"
+
+      let charset = ''
+      if (lowercase) charset += LOWERCASE
+      if (uppercase) charset += UPPERCASE
+      if (numbers) charset += NUMBERS
+      if (symbols) charset += SYMBOLS
+      if (avoidAmbiguous) charset = [...charset].filter(c => !AMBIGUOUS.has(c)).join('')
+      if (!charset.length) {
+        alert('Select at least one character set in settings')
+        return
+      }
+
+      const promptText = prompt('Describe what you want (optional). This helps guide the local generator:') || ''
+      const enc = new TextEncoder()
+      const promptBytes = enc.encode(promptText)
+
+      const rand = new Uint8Array(48)
+      globalThis.crypto.getRandomValues(rand)
+
+      const concat = new Uint8Array(promptBytes.length + rand.length)
+      concat.set(promptBytes, 0)
+      concat.set(rand, promptBytes.length)
+
+      async function sha512(bytes) {
+        const buf = await globalThis.crypto.subtle.digest('SHA-512', bytes)
+        return new Uint8Array(buf)
+      }
+
+      let hash = await sha512(concat)
+      let i = 0
+      let out = ''
+      const target = Math.min(64, Math.max(8, desiredLength|0))
+      while (out.length < target) {
+        out += charset[ hash[i % hash.length] % charset.length ]
+        i++
+        if (i >= hash.length && out.length < target) {
+          hash = await sha512(hash)
+          i = 0
+        }
+      }
+
+      setPassword(out)
+    } catch (e) {
+      alert('AI generate failed: ' + (e && e.message ? e.message : String(e)))
+    }
+  }
+
   async function onCopy(text) {
     try {
       await navigator.clipboard.writeText(text)
@@ -152,6 +213,7 @@ export default function Generator({ entries, setEntries }) {
 
         <div className="flex items-center gap-3">
           <button className="btn-primary" onClick={onGenerate} aria-label="Generate password">Generate</button>
+          <button className="btn-ghost" onClick={onAIGenerate} aria-label="AI Generate password" title="Generate a high-entropy password locally (no network)">AI Generate</button>
           <div className="flex-1 h-2 rounded bg-slate-800 overflow-hidden" aria-label="Strength meter" title={`${Math.round(strength.entropy)} bits`}>
             <div
               className={`h-full transition-base ${strength.label === 'Strong' ? 'bg-emerald-400' : strength.label === 'Good' ? 'bg-brand' : strength.label === 'Fair' ? 'bg-yellow-400' : 'bg-red-400'}`}

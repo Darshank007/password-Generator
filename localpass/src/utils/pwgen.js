@@ -1,4 +1,4 @@
-const AMBIGUOUS = new Set(['l','I','1','O','0','o','S','5','B','8']);
+export const AMBIGUOUS = new Set(['l','I','1','O','0','o','S','5','B','8']);
 
 const LOWERCASE = 'abcdefghijklmnopqrstuvwxyz';
 const UPPERCASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -24,7 +24,7 @@ function pick(charset) {
   return charset[idx];
 }
 
-function buildCharset(options) {
+export function buildCharset(options) {
   let charset = '';
   if (options.lowercase) charset += LOWERCASE;
   if (options.uppercase) charset += UPPERCASE;

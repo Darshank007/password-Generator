@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generatePassword } from '../utils/pwgen.js'
+import { generatePassword, buildCharset, AMBIGUOUS } from '../utils/pwgen.js'
 
 function hasAny(str, set) { return [...str].some(c => set.includes(c)) }
 
@@ -20,6 +20,20 @@ describe('generatePassword', () => {
   it('pronounceable mode produces only letters', () => {
     const pw = generatePassword({ length: 20, pronounceable: true, lowercase: true, uppercase: false, numbers: false, symbols: false })
     expect(/^[a-z]+$/.test(pw)).toBe(true)
+  })
+})
+
+
+describe('AI mapping helper behavior (charset and ambiguous handling)', () => {
+  it('builds charset according to flags', () => {
+    const charset = buildCharset({ lowercase: true, uppercase: false, numbers: true, symbols: false, avoidAmbiguous: false })
+    expect([...charset].every(c => 'abcdefghijklmnopqrstuvwxyz0123456789'.includes(c))).toBe(true)
+  })
+
+  it('removes ambiguous characters when avoidAmbiguous is true', () => {
+    const charset = buildCharset({ lowercase: true, uppercase: true, numbers: true, symbols: true, avoidAmbiguous: true })
+    const hasAmbiguous = [...charset].some(c => AMBIGUOUS.has(c))
+    expect(hasAmbiguous).toBe(false)
   })
 })
 

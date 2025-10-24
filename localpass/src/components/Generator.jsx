@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { generatePassword, estimateStrength } from '../utils/pwgen.js'
 import { encryptData, decryptData } from '../utils/crypto.js'
+import { checkPasswordBreach, getSecurityRecommendation } from '../utils/breachCheck.js'
 
 const STORAGE_KEY = 'localpass_entries_v1'
 const PASSPHRASE_KEY = 'localpass_passphrase_v1'
@@ -19,6 +20,8 @@ export default function Generator({ entries, setEntries }) {
   const [copied, setCopied] = useState(false)
   const [passphrase, setPassphrase] = useState('')
   const [showSettings, setShowSettings] = useState(false)
+  const [breachCheckResult, setBreachCheckResult] = useState(null)
+  const [isCheckingBreach, setIsCheckingBreach] = useState(false)
   const fileInputRef = useRef()
 
   const options = useMemo(() => ({ length, lowercase, uppercase, numbers, symbols, avoidAmbiguous, pronounceable }), [length, lowercase, uppercase, numbers, symbols, avoidAmbiguous, pronounceable])
@@ -45,10 +48,46 @@ export default function Generator({ entries, setEntries }) {
     } catch {}
   }, [passphrase])
 
+  // Debounced breach check for manually typed passwords
+  useEffect(() => {
+    if (!password) {
+      setBreachCheckResult(null)
+      return
+    }
+    
+    const timeoutId = setTimeout(() => {
+      checkBreachStatus(password)
+    }, 1000) // Wait 1 second after user stops typing
+    
+    return () => clearTimeout(timeoutId)
+  }, [password])
+
+  async function checkBreachStatus(password) {
+    if (!password) return
+    
+    setIsCheckingBreach(true)
+    setBreachCheckResult(null)
+    
+    try {
+      const result = await checkPasswordBreach(password)
+      setBreachCheckResult(result)
+    } catch (error) {
+      setBreachCheckResult({
+        isBreached: false,
+        count: 0,
+        message: `Breach check failed: ${error.message}`,
+        error: true
+      })
+    } finally {
+      setIsCheckingBreach(false)
+    }
+  }
+
   function onGenerate() {
     try {
       const pw = generatePassword(options)
       setPassword(pw)
+      checkBreachStatus(pw)
     } catch (e) {
       alert(e.message)
     }
@@ -110,6 +149,7 @@ export default function Generator({ entries, setEntries }) {
       }
 
       setPassword(out)
+      checkBreachStatus(out)
     } catch (e) {
       alert('AI generate failed: ' + (e && e.message ? e.message : String(e)))
     }
@@ -214,6 +254,15 @@ export default function Generator({ entries, setEntries }) {
         <div className="flex items-center gap-3">
           <button className="btn-primary" onClick={onGenerate} aria-label="Generate password">Generate</button>
           <button className="btn-ghost" onClick={onAIGenerate} aria-label="AI Generate password" title="Generate a high-entropy password locally (no network)">AI Generate</button>
+          <button 
+            className="btn-ghost" 
+            onClick={() => checkBreachStatus(password)} 
+            disabled={!password || isCheckingBreach}
+            aria-label="Check password breach status"
+            title="Check if password has been found in data breaches"
+          >
+            {isCheckingBreach ? 'Checking...' : 'Check Breach'}
+          </button>
           <div className="flex-1 h-2 rounded bg-slate-800 overflow-hidden" aria-label="Strength meter" title={`${Math.round(strength.entropy)} bits`}>
             <div
               className={`h-full transition-base ${strength.label === 'Strong' ? 'bg-emerald-400' : strength.label === 'Good' ? 'bg-brand' : strength.label === 'Fair' ? 'bg-yellow-400' : 'bg-red-400'}`}
@@ -236,6 +285,37 @@ export default function Generator({ entries, setEntries }) {
           <label className="flex items-center gap-2"><input type="checkbox" checked={avoidAmbiguous} onChange={e=>setAvoidAmbiguous(e.target.checked)} />Avoid ambiguous</label>
           <label className="flex items-center gap-2 col-span-2 md:col-span-1"><input type="checkbox" checked={pronounceable} onChange={e=>setPronounceable(e.target.checked)} />Pronounceable</label>
         </div>
+
+        {/* Breach Check Results */}
+        {breachCheckResult && (
+          <div className={`p-3 rounded-lg border ${
+            breachCheckResult.error 
+              ? 'bg-yellow-900/20 border-yellow-500/30' 
+              : breachCheckResult.isBreached 
+                ? 'bg-red-900/20 border-red-500/30' 
+                : 'bg-green-900/20 border-green-500/30'
+          }`}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className={`w-3 h-3 rounded-full ${
+                breachCheckResult.error 
+                  ? 'bg-yellow-400' 
+                  : breachCheckResult.isBreached 
+                    ? 'bg-red-400' 
+                    : 'bg-green-400'
+              }`} />
+              <span className="font-medium text-sm">
+                {breachCheckResult.error 
+                  ? 'Breach Check Error' 
+                  : breachCheckResult.isBreached 
+                    ? 'Password Compromised' 
+                    : 'Password Secure'
+                }
+              </span>
+            </div>
+            <p className="text-sm text-slate-300 mb-2">{breachCheckResult.message}</p>
+            <p className="text-xs text-slate-400">{getSecurityRecommendation(breachCheckResult)}</p>
+          </div>
+        )}
 
         <div className="flex gap-2">
           <input className="input" placeholder="Label (e.g., Site name)" value={label} onChange={e=>setLabel(e.target.value)} aria-label="Label" />

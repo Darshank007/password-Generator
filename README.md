@@ -84,3 +84,17 @@ Usage:
 2. Optionally describe what you want (e.g., "strong with symbols", "no confusing characters"). You can leave it blank.
 3. The password is generated locally and placed into the field so you can copy or save it like usual.
 
+## Password Breach Checking
+
+- Automatically checks generated passwords against the HaveIBeenPwned database to ensure they haven't been compromised.
+- Uses k-anonymity model for privacy - only the first 5 characters of the SHA-1 hash are sent to the API.
+- Visual indicators show breach status:
+  - 🟢 Green: Password is secure and not found in breaches
+  - 🔴 Red: Password has been compromised and found in data breaches
+  - 🟡 Yellow: Breach check failed (network error, etc.)
+- Manual "Check Breach" button allows checking any password
+- Automatic checking occurs when:
+  - Generating new passwords (both regular and AI-generated)
+  - Manually typing passwords (with 1-second debounce)
+- Provides security recommendations based on breach results
+

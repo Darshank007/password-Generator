@@ -196,6 +196,10 @@ export default function Generator({ entries, setEntries }) {
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
+      if (encrypted) {
+        // Clear the passphrase so it is not left in the UI/localStorage after export
+        setPassphrase('')
+      }
     } catch (e) {}
   }
 
